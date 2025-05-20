@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Statistic & Probability Solver</title>
+  <style>
+    * {
+      scroll-behavior: smooth;
+    }
+    body {
+      background: linear-gradient(120deg, #f5d0c5, #c2e9fb);
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding-top: 40px;
+      color: #333;
+    }
+    .container {
+      max-width: 850px;
+      margin: auto;
+      padding: 0 20px;
+    }
+    .hero {
+      text-align: center;
+      padding: 50px 20px;
+    }
+    .hero h1 {
+      font-size: 2.5em;
+      color: #4b0082;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      font-size: 1.2em;
+      color: #555;
+    }
+    .section {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    label {
+      margin-top: 12px;
+      display: block;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 25px;
+      background-color: #6a5acd;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    button:hover {
+      background-color: #483d8b;
+    }
+    .result {
+      background-color: #f0f8ff;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      font-size: 0.95em;
+      display: none; /* Hide by default */
+    }
+    .chart-container {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: space-between;
+    }
+    .chart-box {
+      flex: 1 1 45%;
+      max-width: 48%;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+    .home-link {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      text-decoration: none;
+      color: #3498db;
+      font-weight: bold;
+      font-size: 1rem;
+      padding: 5px 10px;
+      border-radius: 5px;
+      transition: color 0.3s;
+    }
+    .home-link:hover {
+      color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <a href="Home.html" class="home-link">Home</a>
+  <section id="home" class="hero">
+    <div class="container">
+      <h1>Statistic & Probability Solver</h1>
+      <p>A simple web application for completing basic statistical and probability calculations.</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="section" id="basic">
+      <h2>📊 Basic Statistics</h2>
+      <label for="data">Enter data (separate with commas):</label>
+      <input type="text" id="data" placeholder="e.g : 5,10,15,20">
+      <button onclick="hitungStatistik()">Calculate</button>
+      <div class="result" id="basicResult">
+        <div id="statsOutput"></div>
+        <div class="chart-container">
+          <div class="chart-box">
+            <canvas id="barChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <canvas id="pieChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <canvas id="lineChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <canvas id="scatterChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <canvas id="histogram"></canvas>
+          </div>
+          <div class="chart-box">
+            <canvas id="boxPlot"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="normal">
+      <h2>🎲 Normal Distribution</h2>
+      <label>Mean (μ):</label>
+      <input type="number" id="normMean" value="0">
+      <label>Standard Deviation (σ):</label>
+      <input type="number" id="normSD" value="1">
+      <label>X Value:</label>
+      <input type="number" id="xValue" value="1.96">
+      <button onclick="hitungNormal()">Calculate</button>
+      <div class="result" id="normalResult"></div>
+    </div>
+
+    <div class="section" id="ci">
+      <h2>🧪 Confidence Interval (Z)</h2>
+      <label>Sample Mean:</label>
+      <input type="number" id="ciMean">
+      <label>Std. Dev:</label>
+      <input type="number" id="ciStd">
+      <label>Sample Size:</label>
+      <input type="number" id="ciN">
+      <label>Z-Score (e.g., 1.96 for 95% CI):</label>
+      <input type="number" id="zScore" value="1.96">
+      <button onclick="hitungCI()">Calculate</button>
+      <div class="result" id="ciResult"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <script>
+    let barChart, pieChart, lineChart, scatterChart, histogram, boxPlot;
+
+    function parseData() {
+      const dataInput = document.getElementById('data');
+      if (!dataInput) {
+        alert("Elemen input data tidak ditemukan. Silakan periksa halaman.");
+        return [];
+      }
+      return dataInput.value
+        .split(',')
+        .map(Number)
+        .filter(n => !isNaN(n));
+    }
+
+    function mean(data) {
+      return data.reduce((a, b) => a + b, 0) / data.length;
+    }
+
+    function median(data) {
+      data.sort((a, b) => a - b);
+      const mid = Math.floor(data.length / 2);
+      return data.length % 2 !== 0 ? data[mid] : (data[mid - 1] + data[mid]) / 2;
+    }
+
+    function mode(data) {
+      const freq = {};
+      data.forEach(n => freq[n] = (freq[n] || 0) + 1);
+      const maxFreq = Math.max(...Object.values(freq));
+      return Object.keys(freq).filter(k => freq[k] === maxFreq);
+    }
+
+    function stdDev(data, m) {
+      const variance = data.reduce((a, b) => a + Math.pow(b - m, 2), 0) / data.length;
+      return [variance, Math.sqrt(variance)];
+    }
+
+    function quartiles(data) {
+      const sorted = [...data].sort((a, b) => a - b);
+      const q1 = median(sorted.slice(0, Math.floor(sorted.length / 2)));
+      const q2 = median(sorted);
+      const q3 = median(sorted.slice(Math.ceil(sorted.length / 2)));
+      return [q1, q2, q3];
+    }
+
+    function hitungStatistik() {
+      const data = parseData();
+      const resultDiv = document.getElementById('basicResult');
+      if (!resultDiv) {
+        alert("Elemen hasil tidak ditemukan. Silakan periksa halaman.");
+        return;
+      }
+      if (data.length === 0) {
+        alert("Data tidak valid. Masukkan angka dipisahkan koma.");
+        resultDiv.style.display = 'none';
+        return;
+      }
+      resultDiv.style.display = 'block';
+
+      const m = mean(data);
+      const med = median(data);
+      const mo = mode(data).join(', ');
+      const [v, s] = stdDev(data, m);
+      const range = Math.max(...data) - Math.min(...data);
+
+      const statsOutput = document.getElementById('statsOutput');
+      if (statsOutput) {
+        statsOutput.innerHTML =
+          `<b>Mean:</b> ${m.toFixed(2)}<br>
+           <b>Median:</b> ${med}<br>
+           <b>Mode:</b> ${mo}<br>
+           <b>Range:</b> ${range}<br>
+           <b>Variance:</b> ${v.toFixed(2)}<br>
+           <b>Std. Deviation:</b> ${s.toFixed(2)}`;
+      }
+
+      // Prepare data for charts
+      const labels = data.map((_, i) => `Data ${i + 1}`);
+      const freq = {};
+      data.forEach(n => freq[n] = (freq[n] || 0) + 1);
+      const pieLabels = Object.keys(freq);
+      const pieData = Object.values(freq);
+      const sortedData = [...data].sort((a, b) => a - b);
+      const [q1, q2, q3] = quartiles(data);
+      const iqr = q3 - q1;
+      const lowerWhisker = Math.max(Math.min(...data), q1 - 1.5 * iqr);
+      const upperWhisker = Math.min(Math.max(...data), q3 + 1.5 * iqr);
+      const outliers = data.filter(d => d < lowerWhisker || d > upperWhisker);
+
+      // Destroy existing charts if they exist
+      if (barChart) barChart.destroy();
+      if (pieChart) pieChart.destroy();
+      if (lineChart) lineChart.destroy();
+      if (scatterChart) scatterChart.destroy();
+      if (histogram) histogram.destroy();
+      if (boxPlot) boxPlot.destroy();
+
+      // Bar Chart
+      const barCanvas = document.getElementById('barChart');
+      if (barCanvas) {
+        barChart = new Chart(barCanvas, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Data Values',
+              data: data,
+              backgroundColor: 'rgba(106, 90, 205, 0.5)',
+              borderColor: 'rgba(106, 90, 205, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Bar Chart' } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // Pie Chart
+      const pieCanvas = document.getElementById('pieChart');
+      if (pieCanvas) {
+        pieChart = new Chart(pieCanvas, {
+          type: 'pie',
+          data: {
+            labels: pieLabels,
+            datasets: [{
+              label: 'Frequency',
+              data: pieData,
+              backgroundColor: [
+                'rgba(106, 90, 205, 0.5)',
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Pie Chart (Frequency)' } }
+          }
+        });
+      }
+
+      // Line Chart
+      const lineCanvas = document.getElementById('lineChart');
+      if (lineCanvas) {
+        lineChart = new Chart(lineCanvas, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Data Trend',
+              data: data,
+              borderColor: 'rgba(106, 90, 205, 1)',
+              fill: false
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Line Chart' } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // Scatter Chart
+      const scatterCanvas = document.getElementById('scatterChart');
+      if (scatterCanvas) {
+        scatterChart = new Chart(scatterCanvas, {
+          type: 'scatter',
+          data: {
+            datasets: [{
+              label: 'Data Points',
+              data: data.map((y, i) => ({ x: i + 1, y })),
+              backgroundColor: 'rgba(106, 90, 205, 0.5)'
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Scatter Plot' } },
+            scales: { x: { title: { display: true, text: 'Index' } }, y: { title: { display: true, text: 'Value' } } }
+          }
+        });
+      }
+
+      // Histogram
+      const binSize = Math.ceil((Math.max(...data) - Math.min(...data)) / Math.sqrt(data.length)) || 1;
+      const bins = [];
+      let minVal = Math.floor(Math.min(...data));
+      while (minVal <= Math.max(...data)) {
+        bins.push({ range: `${minVal} - ${minVal + binSize}`, count: 0 });
+        data.forEach(d => {
+          if (d >= minVal && d < minVal + binSize) bins[bins.length - 1].count++;
+        });
+        minVal += binSize;
+      }
+      const histogramCanvas = document.getElementById('histogram');
+      if (histogramCanvas) {
+        histogram = new Chart(histogramCanvas, {
+          type: 'bar',
+          data: {
+            labels: bins.map(b => b.range),
+            datasets: [{
+              label: 'Frequency',
+              data: bins.map(b => b.count),
+              backgroundColor: 'rgba(106, 90, 205, 0.5)',
+              borderColor: 'rgba(106, 90, 205, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Histogram' } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Count' } }, x: { title: { display: true, text: 'Bins' } } }
+          }
+        });
+      }
+
+      // Box Plot (Custom Implementation)
+      const boxPlotCanvas = document.getElementById('boxPlot');
+      if (boxPlotCanvas) {
+        boxPlot = new Chart(boxPlotCanvas, {
+          type: 'bar',
+          data: {
+            labels: ['Dataset'],
+            datasets: [
+              {
+                label: 'Box',
+                data: [q3 - q1],
+                backgroundColor: 'rgba(106, 90, 205, 0.5)',
+                borderColor: 'rgba(106, 90, 205, 1)',
+                borderWidth: 1,
+                barPercentage: 0.4
+              },
+              {
+                label: 'Median',
+                data: [0],
+                backgroundColor: 'rgba(255, 99, 132, 1)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                barPercentage: 0.1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Box Plot' },
+              annotation: {
+                annotations: [
+                  {
+                    type: 'line',
+                    yMin: lowerWhisker,
+                    yMax: lowerWhisker,
+                    xMin: 0.3,
+                    xMax: 0.7,
+                    borderColor: 'rgba(106, 90, 205, 1)',
+                    borderWidth: 2
+                  },
+                  {
+                    type: 'line',
+                    yMin: upperWhisker,
+                    yMax: upperWhisker,
+                    xMin: 0.3,
+                    xMax: 0.7,
+                    borderColor: 'rgba(106, 90, 205, 1)',
+                    borderWidth: 2
+                  },
+                  {
+                    type: 'line',
+                    yMin: lowerWhisker,
+                    yMax: q1,
+                    xMin: 0.5,
+                    xMax: 0.5,
+                    borderColor: 'rgba(106, 90, 205, 1)',
+                    borderWidth: 2
+                  },
+                  {
+                    type: 'line',
+                    yMin: q3,
+                    yMax: upperWhisker,
+                    xMin: 0.5,
+                    xMax: 0.5,
+                    borderColor: 'rgba(106, 90, 205, 1)',
+                    borderWidth: 2
+                  },
+                  ...outliers.map((o, i) => ({
+                    type: 'point',
+                    xValue: 0.5 + (i * 0.05 - (outliers.length - 1) * 0.025),
+                    yValue: o,
+                    backgroundColor: 'rgba(255, 99, 132, 1)',
+                    radius: 4
+                  }))
+                ]
+              }
+            },
+            scales: {
+              y: {
+                title: { display: true, text: 'Value' },
+                min: Math.min(lowerWhisker, ...outliers) - 0.5,
+                max: Math.max(upperWhisker, ...outliers) + 0.5
+              },
+              x: { title: { display: true, text: '' } }
+            }
+          }
+        });
+      }
+    }
+
+    function hitungNormal() {
+      const normMeanInput = document.getElementById('normMean');
+      const normSDInput = document.getElementById('normSD');
+      const xValueInput = document.getElementById('xValue');
+      const normalResult = document.getElementById('normalResult');
+      if (!normMeanInput || !normSDInput || !xValueInput || !normalResult) {
+        alert("Elemen input untuk distribusi normal tidak ditemukan. Silakan periksa halaman.");
+        return;
+      }
+      const x = parseFloat(xValueInput.value);
+      const mean = parseFloat(normMeanInput.value);
+      const std = parseFloat(normSDInput.value);
+      if (isNaN(x) || isNaN(mean) || isNaN(std) || std <= 0) {
+        alert("Masukkan nilai yang valid untuk Mean, Std. Deviation, dan X Value.");
+        return;
+      }
+      const pdf = (1 / (std * Math.sqrt(2 * Math.PI))) *
+                  Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
+      normalResult.innerHTML = `<b>PDF Value:</b> ${pdf.toFixed(5)}`;
+      normalResult.style.display = 'block';
+    }
+
+    function hitungCI() {
+      const ciMeanInput = document.getElementById('ciMean');
+      const ciStdInput = document.getElementById('ciStd');
+      const ciNInput = document.getElementById('ciN');
+      const zScoreInput = document.getElementById('zScore');
+      const ciResult = document.getElementById('ciResult');
+      if (!ciMeanInput || !ciStdInput || !ciNInput || !zScoreInput || !ciResult) {
+        alert("Elemen input untuk confidence interval tidak ditemukan. Silakan periksa halaman.");
+        return;
+      }
+      const mean = parseFloat(ciMeanInput.value);
+      const std = parseFloat(ciStdInput.value);
+      const n = parseFloat(ciNInput.value);
+      const z = parseFloat(zScoreInput.value);
+      if (isNaN(mean) || isNaN(std) || isNaN(n) || isNaN(z) || std <= 0 || n <= 0) {
+        alert("Masukkan nilai yang valid untuk Sample Mean, Std. Dev, Sample Size, dan Z-Score.");
+        return;
+      }
+      const se = std / Math.sqrt(n);
+      const lower = mean - z * se;
+      const upper = mean + z * se;
+      ciResult.innerHTML = `<b>Confidence Interval:</b> [${lower.toFixed(2)} , ${upper.toFixed(2)}]`;
+      ciResult.style.display = 'block';
+    }
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93cb20097f60c029',t:'MTc0NjczMDA0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d5a61b9a9144ee',t:'MTc0Njg0MDM5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>
